@@ -31,9 +31,8 @@ export const dummyTrailers = [
         image: "https://img.youtube.com/vi/umiKiW4En9g/maxresdefault.jpg",
         videoUrl: 'https://www.youtube.com/watch?v=umiKiW4En9g'
     },
-]
-
-const dummyCastsData = [
+ ]
+  const dummyCastsData = [
     { "name": "Milla Jovovich", "profile_path": "https://image.tmdb.org/t/p/original/usWnHCzbADijULREZYSJ0qfM00y.jpg", },
     { "name": "Dave Bautista", "profile_path": "https://image.tmdb.org/t/p/original/snk6JiXOOoRjPtHU5VMoy6qbd32.jpg", },
     { "name": "Arly Jover", "profile_path": "https://image.tmdb.org/t/p/original/zmznPrQ9GSZwcOIUT0c3GyETwrP.jpg", },
