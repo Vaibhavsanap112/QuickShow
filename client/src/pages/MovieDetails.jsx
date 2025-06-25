@@ -5,17 +5,21 @@ import BlurCircle from "../components/BlurCircle";
 import { HeartIcon, PlayCircleIcon, StarIcon } from "lucide-react";
 import timeFormat from "../lib/timeFormat";
 import DateSelect from "../components/DateSelect";
+import Loading from "../components/Loading";
 
 function MovieDetails() {
   const { id } = useParams();
   const [show, setShow] = useState(null);
 
   const getShow = async () => {
-    const show = dummyShowsData.find((show) => show._id === id);
-    setShow({
-      movie: show,
-      dateTime: dummyDateTimeData,
-    });
+    const show = dummyShowsData.find(show => show._id === id)
+    if(show){
+
+      setShow({
+        movie: show,
+        dateTime: dummyDateTimeData,
+      });
+    }
   };
   useEffect(() => {
     getShow();
@@ -85,7 +89,7 @@ function MovieDetails() {
       <DateSelect dateTime={show.dateTime} id={id}/>
     </div>
   ) : (
-    <div>Loading...</div>
+   <Loading></Loading>
   );
 }
 
