@@ -26,7 +26,7 @@ function App() {
           element={<MovieDetails></MovieDetails>}
         ></Route>
         <Route
-          path="/movies:id/:date"
+          path="/movies/:id/:date"
           element={<SeatLayout></SeatLayout>}
         ></Route>
         <Route path="/my-booking" element={<MyBooking></MyBooking>}></Route>
