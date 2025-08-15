@@ -29,7 +29,7 @@ function App() {
           path="/movies/:id/:date"
           element={<SeatLayout></SeatLayout>}
         ></Route>
-        <Route path="/my-booking" element={<MyBooking></MyBooking>}></Route>
+        <Route path="/my-bookings" element={<MyBooking></MyBooking>}></Route>
         <Route path="/favourite" element={<Favourite></Favourite>}></Route>
       </Routes>
       {!IsAdminRoute && <Footer />}
