@@ -4,7 +4,7 @@ const connectDB = require("./configs/db")
 const cors = require("cors")
 require ("dotenv").config();
 const {serve}  = require("inngest/express")
-const {inngest, functions} = require("./inngest/index")
+const {inngest, functions} = require("./inngest")
 const {clerkMiddleware} = require("@clerk/express")
 app.use(clerkMiddleware())
 

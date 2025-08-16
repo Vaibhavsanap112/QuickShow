@@ -1,5 +1,5 @@
 const { Inngest } = require("inngest");
-const User = require("../models/user");
+const User = require("../models/User");
 
 // Create a client
 const inngest = new Inngest({ id: "movie-ticket-booking" });
