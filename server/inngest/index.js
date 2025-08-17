@@ -9,17 +9,21 @@ const syncUserCreation = inngest.createFunction(
   { id: "sync-user-from-clerk" },
   { event: "clerk/user.created" },
   async ({ event }) => {
-    const { id, first_name, last_name, email_addresses, image_url } = event.data;
+    try {
+      const { id, first_name, last_name, email_addresses, image_url } = event.data;
 
-    const userData = {
-      clerkId: id,
-      email: email_addresses?.[0]?.email_address || "",
-      name: `${first_name || ""} ${last_name || ""}`.trim(),
-      image: image_url,
-    };
+      const userData = {
+        clerkId: id,
+        email: email_addresses?.[0]?.email_address || "",
+        name: `${first_name || ""} ${last_name || ""}`.trim(),
+        image: image_url,
+      };
 
-    await User.create(userData);
-    console.log("✅ User synced to DB:", userData);
+      const user = await User.create(userData);
+      console.log("✅ User synced to DB:", user);
+    } catch (err) {
+      console.error("❌ Error syncing user:", err);
+    }
   }
 );
 
@@ -27,9 +31,14 @@ const syncUserDeletion = inngest.createFunction(
   { id: "delete-user-from-clerk" },
   { event: "clerk/user.deleted" },
   async ({ event }) => {
-    const { id } = event.data;
-    await User.findOneAndDelete({ clerkId: id });
-    console.log("🗑️ User deleted from DB:", id);
+    try {
+      const { id } = event.data;
+      const deletedUser = await User.findOneAndDelete({ clerkId: id });
+      if (deletedUser) console.log("🗑️ User deleted from DB:", id);
+      else console.log("⚠️ User not found in DB for deletion:", id);
+    } catch (err) {
+      console.error("❌ Error deleting user:", err);
+    }
   }
 );
 
@@ -37,16 +46,25 @@ const syncUserUpdation = inngest.createFunction(
   { id: "update-user-from-clerk" },
   { event: "clerk/user.updated" },
   async ({ event }) => {
-    const { id, first_name, last_name, email_addresses, image_url } = event.data;
+    try {
+      const { id, first_name, last_name, email_addresses, image_url } = event.data;
 
-    const userData = {
-      email: email_addresses?.[0]?.email_address || "",
-      name: `${first_name || ""} ${last_name || ""}`.trim(),
-      image: image_url,
-    };
+      const userData = {
+        email: email_addresses?.[0]?.email_address || "",
+        name: `${first_name || ""} ${last_name || ""}`.trim(),
+        image: image_url,
+      };
 
-    await User.findOneAndUpdate({ clerkId: id }, userData, { new: true });
-    console.log("♻️ User updated in DB:", userData);
+      const updatedUser = await User.findOneAndUpdate(
+        { clerkId: id },
+        userData,
+        { new: true }
+      );
+      if (updatedUser) console.log("♻️ User updated in DB:", updatedUser);
+      else console.log("⚠️ User not found in DB for update:", id);
+    } catch (err) {
+      console.error("❌ Error updating user:", err);
+    }
   }
 );
 
