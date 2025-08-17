@@ -2,14 +2,19 @@ const mongoose = require("mongoose");
 
 const connectDB = async () => {
   try {
-    mongoose.connection.on("connected", () =>
-      console.log(" Database Connected")
-    );
+    // Connect to MongoDB
+    await mongoose.connect(process.env.MONGODB_URL, {
+      dbName: "quickshow",       // specify database name explicitly
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
 
-    await mongoose.connect(`${process.env.MONGODB_URL}/quickshow`);
+    console.log("✅ Database Connected");
   } catch (error) {
-    console.log(" DB Error:", error.message);
+    console.error("❌ DB Connection Error:", error.message);
+    process.exit(1); // stop app if DB connection fails
   }
 };
 
-module.exports = connectDB; 
+// Export the function
+module.exports = connectDB;
