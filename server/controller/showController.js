@@ -1,93 +1,153 @@
-const { default: axios } = require("axios");
+// controllers/movieController.js
+const axios = require('axios');
 const Movie = require("../models/Movie");
-const Show = require("../models/Show"); // <-- make sure this model exists
+const Show = require('../models/Show');
 
-// API to get now playing movies
 const getNowPlayingMovies = async (req, res) => {
   try {
-    const { data } = await axios.get("https://api.themoviedb.org/3/movie/now_playing", {
-      headers: {
-        Authorization: `Bearer ${process.env.TMDB_API_KEY}`,
-      },
-    });
+    const { data } = await axios.get('https://api.themoviedb.org/3/movie/now_playing', {
+      headers: { Authorization: `Bearer ${process.env.TMDB_API_KEY}` }
+    })
 
     const movies = data.results;
-    res.json({ success: true, movies:movies });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
+    res.json({ success: true, movies: movies })
 
-// API to add a new show to database
+  } catch (error) {
+    console.error(error);
+    res.json({ success: false, message: error.message })
+
+  }
+}
+
+// Api to add new show to database
+
+
 const addShow = async (req, res) => {
   try {
     const { movieId, showsInput, showPrice } = req.body;
-
-    let movie = await Movie.findById(movieId);
+    let movie = await Movie.findById(movieId)
 
     if (!movie) {
-      // Fetch movie details and credits from TMDB API
-      const [movieDetailsResponse, movieCreditResponse] = await Promise.all([
-        axios.get(`https://api.themoviedb.org/3/movie/${movieId}`, {
-          headers: {
-            Authorization: `Bearer ${process.env.TMDB_API_KEY}`,
-          },
-        }),
-        axios.get(`https://api.themoviedb.org/3/movie/${movieId}/credits`, {
-          headers: {
-            Authorization: `Bearer ${process.env.TMDB_API_KEY}`,
-          },
-        }),
-      ]);
+      // fetch movie details from TMDB api
 
-      const movieDetails = movieDetailsResponse.data;
-      const movieCredits = movieCreditResponse.data;
+      const [movieDetailsResponse, movieCreditsResponse] = await Promise.all([
+        axios.get(`
+https://api.themoviedb.org/3/movie/ ${movieId}`,
+          {
+            headers: { Authorization: `Bearer ${process.env.TMDB_API_KEY}` }
+          }),
+        axios.get(`
+https://api.themoviedb.org/3/movie/${movieId}/credits`, {
+          headers: { Authorization: `Bearer ${process.env.TMDB_API_KEY}` }
+        })
+      ])
+      const movieApiData = movieDetailsResponse.data;
+      const movieCreditData = movieCreditsResponse.data;
 
-      const movieADetails = {
+
+      const movieDetails = {
         _id: movieId,
-        title: movieDetails.title,
-        overview: movieDetails.overview,
-        poster_path: movieDetails.poster_path,
-        backdrop_path: movieDetails.backdrop_path,
-        release_date: movieDetails.release_date,
-        original_language: movieDetails.original_language,
-        tagline: movieDetails.tagline || " ",
-        genres: movieDetails.genres,
-        casts: movieCredits.cast,
-        vote_average: movieDetails.vote_average,
-        runtime: movieDetails.runtime,
-      };
+        title: movieApiData.title,
+        overview: movieApiData.overview,
+        poster_path: movieApiData.poster_path,
+        backdrop_path: movieApiData.backdrop_path,
+        genres: movieApiData.genres,
+        casts: movieCreditData.casts,
+        release_data: movieApiData.release_data,
+        original_language: movieApiData.original_language,
+        tagline: movieApiData.tagline || "",
+        vote_average: movieApiData.vote_average,
+        runtime: movieApiData.runtime
 
-      movie = await Movie.create(movieADetails);
+      }
+
+      // Add movie to the database
+      movie = await Movie.create(movieDetails);
+
+
+
+
     }
-
-    // Prepare show entries
-    const showsToCreate = [];
-    showsInput.forEach((show) => {
+    const ShowsToCreate = [];
+    showsInput.forEach(show => {
       const showDate = show.date;
       show.time.forEach((time) => {
-        const dateTimeString = `${showDate}T${time}:00`;
-        showsToCreate.push({
+        const dateTimeString = `${showDate}T${time}`;
+        ShowsToCreate.push({
           movie: movieId,
           showDateTime: new Date(dateTimeString),
           showPrice,
           occupiedSeats: {}
-        });
-      });
+        })
+      })
+
     });
 
-    if (showsToCreate.length > 0) {
-      await Show.insertMany(showsToCreate);
+    if (ShowsToCreate.length > 0) {
+      await Show.insertMany(ShowsToCreate)
     }
+    res.json({ success: true, message: "Show Added successfully" })
 
-    res.json({ success: true, message: "Show added successfully" });
+
 
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error(error);
+    res.json({ success: false, message: error.message })
+
   }
-};
+}
+
+// API to get all shows from database
+
+const getShows = async (req, res) => {
+  try {
+    const shows = await Show.find({ showDateTime: { $gte: new Date() } }).populate('movie').sort({ showDateTime: 1 });
+
+    // filter unque shows
+
+    const uniqueShows = new Set(shows.map(show => show.movie))
+    res.json({ success: true, shows: Array.from(uniqueShows) })
+  } catch (error) {
+
+    console.log(error)
+    res.json({ success: false, message: error.message })
+  }
+}
+
+
+// Api to get Single show from database
+
+const getShow = async (req,res)=>{
+  try{
+
+    const {movieId}= req.params;
+    const shows = await Show.find({movie:movieId, showDateTime:{$gte:new Date()}})
+
+    const movie = await Movie.findById(movieId);
+    const dateTime = {}
+
+    shows.forEach((show)=>{
+      const date = show.showDateTime.toISOString().split("T"[0]);
+      if(!dateTime[date]){
+        dateTime[date]=[]
+      }
+      dateTime[date].push({time:show.showDateTime,showId:show._id})
+    })
+    res.json({success:true,movie,dateTime})
+
+  }catch(error){
+
+       console.log(error)
+    res.json({ success: false, message: error.message })
+
+  }
+}
+
 
 module.exports = {
   getNowPlayingMovies,
   addShow,
+  getShows,
+  getShow
+
 };
