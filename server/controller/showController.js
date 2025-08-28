@@ -2,6 +2,7 @@
 const axios = require('axios');
 const Movie = require("../models/Movie");
 const Show = require('../models/Show');
+const { inngest } = require('../inngest');
 
 const getNowPlayingMovies = async (req, res) => {
   try {
@@ -86,6 +87,14 @@ https://api.themoviedb.org/3/movie/${movieId}/credits`, {
     if (ShowsToCreate.length > 0) {
       await Show.insertMany(ShowsToCreate)
     }
+
+
+    // Trigger inngest event
+    await inngest.send({
+      name:"app/show.added",
+      data:{movieTitle:movie.title}
+    })
+    
     res.json({ success: true, message: "Show Added successfully" })
 
 

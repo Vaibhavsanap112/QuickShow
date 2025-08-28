@@ -3,6 +3,8 @@ const protectAdmin = require("../middleware/auth");
 const { isAdmin, getAllShows, getAllBookings } = require("../controller/adminController");
 
 const { clerkClient } = require("@clerk/express");
+console.log("MONGODB_URL:", process.env.MONGODB_URL);
+
 
 const connectDB = async () => {
   try {

@@ -3,6 +3,7 @@ const User = require("../models/user");
 const Booking = require("../models/Booking");
 const Show = require("../models/Show");
 const sendEmail = require("../configs/nodeMailer");
+const { set } = require("mongoose");
 
 // Create a client
 const inngest = new Inngest({ id: "movie-ticket-booking" });
@@ -134,6 +135,117 @@ const sendBookingConfirmationEmail = inngest.createFunction(
 
 )
 
-const functions = [syncUserCreation, syncUserDeletion, syncUserUpdation, releseSeatsAndDeleteBooking , sendBookingConfirmationEmail];
+// Inneges FUnctions to send the reminder
+
+const sendShowReminders = inngest.createFunction(
+  { id: "send-show-reminders" },
+  { cron: "0 */8 * * *" },
+  async ({ step }) => {
+    const now = new Date();
+    const in8Hours = new Date(now.getTime() + 8 * 60 * 1000);
+    const windowStart = new Date(in8Hours.getTime() - 10 * 60 * 1000)
+
+    // Prepare reminder tasks
+    const reminderTask = await step.run("prepare-reminder-tasks", async () => {
+      const shows = await Show.find({
+        showTime: { $gte: windowStart, $lte: in8Hours }
+      }).populate("movie");
+      const tasks = [];
+      for (const show of shows) {
+        if (!show.movie || !show.occupiedSeats) continue;
+        const userIds = [...new set(Object.values(show.occupiedSeats))]
+        if (userIds.length === 0) continue;
+
+        const users = await User.find({ _id: { $in: userIds } }).select("name email");
+
+        for (const user of users) {
+          task.push({
+            userEmail: user.email,
+            userName: show.movie.title,
+            showTime: show.showTime,
+          })
+        }
+
+      }
+      return tasks;
+    })
+    if (reminderTask.length === 0) {
+      return { sent: 0, message: "No reminders to send." }
+    }
+    //  send reminder emails
+
+    const results = await step.run('send-all-reminders', async () => {
+      return await Promise.allSettled(
+        reminderTask.map(task => sendEmail({
+          to: task.userEmail,
+          subject: `Reminder: Your movie "${task.movieTitle}" starts soon!`,
+          body: `<div style="font-family: Arial, sans-serif; padding: 10px;">
+  <h2>Hello ${task.userName},</h2>
+  <p>This is a quick reminder that your movie:</p>
+  <h3 style="color: #F84565;">${task.movieTitle}</h3>
+  <p>
+    is scheduled for 
+    <strong>${new Date(task.showTime).toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata' })}</strong> 
+    at 
+    <strong>${new Date(task.showTime).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata' })}</strong>.
+  </p>
+  <p>It starts in approximately <strong>8 hours</strong> - make sure you're ready!</p>
+  <br/>
+  <p>Enjoy the show!<br/>QuickShow Team</p>
+</div>
+`
+        }))
+      )
+    })
+
+    const sent = results.filter(r => r.status === "fulfilled").length;
+    const failed = results.length - sent;
+
+    return {
+      sent,
+      failed,
+      message: `Sent ${sent} reminder(s), ${failed} failed.`
+    }
+  }
+)
+// Innegest function to send notificatin when a new show is added
+
+const sendNewShowNotifications = inngest.createFunction(
+  { id: "send-new-show-notification" },
+  { event: "app/show.added" },
+  async ({ event }) => {
+    const { movieTitle } = event.data;
+    const users = await User.find({})
+
+    for (const user of users) {
+      const userEmail = user.email;
+      const userName = user.name;
+      const subject = `New Show Added: ${movieTitle}`;
+
+      const body = `<div style="font-family: Arial, sans-serif; padding: 20px;">
+  <h2>Hi ${userName},</h2>
+  <p>We've just added a new show to our library:</p>
+  <h3 style="color: #F84565;">${movieTitle}</h3>
+  <p>Visit our website</p>
+  <br/>
+  <p>Thanks,<br/>QuickShow Team</p>
+</div>
+`;
+
+ await sendEmail({
+      to:userEmail,
+      subject,
+      body,
+      
+    })
+
+    }
+
+    return {message: "Notification sent."}
+   
+
+  }
+)
+const functions = [syncUserCreation, syncUserDeletion, syncUserUpdation, releseSeatsAndDeleteBooking, sendBookingConfirmationEmail, sendShowReminders,sendNewShowNotifications];
 
 module.exports = { inngest, functions };
