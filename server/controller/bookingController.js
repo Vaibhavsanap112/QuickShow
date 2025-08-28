@@ -1,5 +1,6 @@
 //  Functions to check availability of selected seats for a movie
 
+const { inngest } = require("../inngest");
 const Booking = require("../models/Booking");
 const Show = require("../models/Show")
 const stripe = require("stripe")
@@ -85,6 +86,14 @@ const createBooking = async (req, res) => {
     })
     booking.paymentLink = session.url
     await booking.save()
+    // Run Inngest Sheduler functionto chekc payment status after 10 min 
+
+    await inngest.send({
+      name: "app/checkpayment",
+      data:{
+        bookingId:booking._id.toString()
+      }
+    })
 
     
 
