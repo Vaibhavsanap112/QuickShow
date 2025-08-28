@@ -26,10 +26,9 @@ const HeroSection = () => {
         </div>
 
         <p className="max-w-md text-gray-300">
-          Lorem ipsum dolor, sit amet consectetur adipisicing elit. Adipisci,
-          quam expedita debitis officiis voluptatem sed eum fugit veniam quod
-          delectus id impedit accusantium sit blanditiis autem maiores ea quasi?
-          Veritatis!
+          In a post-apocalyptic world where cities ride on wheels and,
+          consume each other to surivive , two people meet in London and
+          try to stop a conspiracy
         </p>
         <button
           onClick={() => navigate("/movies")}
