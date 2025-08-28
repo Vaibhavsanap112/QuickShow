@@ -2,11 +2,12 @@
 
 const Booking = require("../models/Booking");
 const Show = require("../models/Show")
+const stripe = require("stripe")
 
 const checkSeatsAvailability = async (showId, selectedSeats) => {
   try {
 
-    const data = await Show.findById(showId)
+    const showData = await Show.findById(showId)
     if (!showData) return false;
 
 
@@ -46,7 +47,7 @@ const createBooking = async (req, res) => {
 
     })
 
-    selectedSeats.mapp((seat) => {
+    selectedSeats.map((seat) => {
       showData.occupiedSeats[seat] = userId;
     })
     showData.markModified('occupiedSeats')
@@ -54,8 +55,40 @@ const createBooking = async (req, res) => {
     await showData.save();
 
     //  Stripe Gateway Initialize
+    const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY)
 
-    res.json({ success: true, message: "booked successesfully" })
+    // Creating line items to for stripe
+
+    const line_items = [{
+      price_data :{
+        currency:'usd',
+        product_data:{
+          name:showData.movie.title
+        },
+        unit_amount:Math.floor(booking.amount)*100
+
+      },
+      quantity:1
+
+    }]
+    
+
+    const session = await stripeInstance.checkout.sessions.create({
+      success_url:`${origin}/loading/my-bookings`,
+      cancel_url:`${origin}/my-bookings`,
+      line_items:line_items,
+      mode:'payment',
+      metadata:{
+        bookingId:booking._id.toString()
+      },
+      expires_at:Math.floor(Date.now()/1000)+30*60 //expires in 30 min
+    })
+    booking.paymentLink = session.url
+    await booking.save()
+
+    
+
+    res.json({ success: true, url:session.url })
   } catch (error) {
     console.log(error.message)
     res.json({ success: false, message: error.message })
@@ -69,7 +102,7 @@ const getOccupiedSeats = async (req,res)=>{
 
     const occupiedSeats = Object.keys(showData.occupiedSeats)
 
-     res.json({ success: true,occupiedSeats })
+     res.json({ success: true, occupiedSeats })
   }catch(error){
 
     console.log(error.message)

@@ -12,11 +12,21 @@ const showRouter = require("./routes/showRoutes");
 const  bookingRouter  = require("./routes/bookingRoutes");
 const adminRouter = require("./routes/adminRoutes");
 const userRouter = require("./routes/userRoutes");
+const { stripeWebhooks } = require("./controller/stripeWebhooks");
 app.use(clerkMiddleware())
 
-
+app.use(cors({
+  origin: "http://localhost:5173",  // your frontend URL
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
 app.use(express.json())
  connectDB()
+
+app.use('/api/stripe', express.raw({type:'application/json'}) , stripeWebhooks)
+
+
+
 
 app.get("/",function(req,res){
   res.send("Server is live")

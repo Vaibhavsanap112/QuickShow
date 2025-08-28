@@ -1,4 +1,8 @@
 const mongoose = require("mongoose");
+const protectAdmin = require("../middleware/auth");
+const { isAdmin, getAllShows, getAllBookings } = require("../controller/adminController");
+
+const { clerkClient } = require("@clerk/express");
 
 const connectDB = async () => {
   try {
@@ -8,6 +12,10 @@ const connectDB = async () => {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
+
+ // remove parentheses
+   
+    
 
     console.log("✅ Database Connected");
   } catch (error) {

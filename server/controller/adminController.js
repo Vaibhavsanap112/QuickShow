@@ -9,6 +9,8 @@ const isAdmin = async (req, res) => {
 
 }
 
+
+
 // APi to get dashboard dagta
 
 const getDashboardData = async (req, res) => {
@@ -61,7 +63,7 @@ const getAllBookings = async (req,res)=>{
       path: "show",
       populate:{path:"movie"}
 
-    }).sort({cretedAt:-1})
+    }).sort({createdAt:-1})
 
     res.json({success:true, bookings})
 

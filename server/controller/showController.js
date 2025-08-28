@@ -32,7 +32,7 @@ const addShow = async (req, res) => {
 
       const [movieDetailsResponse, movieCreditsResponse] = await Promise.all([
         axios.get(`
-https://api.themoviedb.org/3/movie/ ${movieId}`,
+https://api.themoviedb.org/3/movie/${movieId}`,
           {
             headers: { Authorization: `Bearer ${process.env.TMDB_API_KEY}` }
           }),
@@ -53,7 +53,7 @@ https://api.themoviedb.org/3/movie/${movieId}/credits`, {
         backdrop_path: movieApiData.backdrop_path,
         genres: movieApiData.genres,
         casts: movieCreditData.casts,
-        release_data: movieApiData.release_data,
+        release_date: movieApiData.release_date,
         original_language: movieApiData.original_language,
         tagline: movieApiData.tagline || "",
         vote_average: movieApiData.vote_average,

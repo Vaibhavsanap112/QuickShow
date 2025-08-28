@@ -5,9 +5,10 @@ import { assets } from "../assets/assets";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import Loading from "../components/Loading";
-import { dummyDateTimeData, dummyShowsData } from "../assets/assets";
+
 import { ArrowRightIcon, ClockIcon } from "lucide-react";
 import isoTimeFormat from "../lib/isoTimeFormat";
+import { useAppContext } from "../context/AppContext";
 const SeatLayout = () => {
   const groupRows = [
     ["A", "B"],
@@ -21,17 +22,24 @@ const SeatLayout = () => {
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [selectedTime, setSelectedTime] = useState(null);
   const [show, setShow] = useState(null);
+  const [occupiedSeats , setOccupiedSeats] = useState([])
 
   const navigate = useNavigate();
 
+  const {axios , getToken, user} = useAppContext();
+
+
   const getShow = async () => {
-    const show = dummyShowsData.find((show) => show._id === id);
-    if (show) {
-      setShow({
-        movie: show,
-        dateTiime: dummyDateTimeData,
-      });
+   try{
+    const {data} = await axios.get(`/api/show/${id}`)
+    if(data.success){
+      setShow(data)
     }
+
+   }catch(error){
+    console.log(error)
+
+   }
   };
 
   const handleSeatClick = (seatId) => {
@@ -40,6 +48,9 @@ const SeatLayout = () => {
     }
     if (!selectedSeats.includes(seatId) && selectedSeats.length > 4) {
       return toast("You can only select 5 seats");
+    }
+    if(occupiedSeats.includes(seatId)){
+      return toast('This seat is already booked')
     }
     setSelectedSeats((prev) =>
       prev.includes(seatId)
@@ -58,8 +69,8 @@ const SeatLayout = () => {
                 key={seatId}
                 onClick={() => handleSeatClick(seatId)}
                 className={`h-8 w-8 rounded border  border-primary/20 cursor-pointer ${
-                  selectedSeats.includes(seatId) && "bg-primary text-white"
-                }`}
+                  selectedSeats.includes(seatId) && "bg-primary text-white"} 
+                  ${occupiedSeats.includes(seatId) && "opacity-50"}`}
               >
                 {seatId}
               </button>
@@ -69,15 +80,61 @@ const SeatLayout = () => {
       </div>
     );
   };
+
+  const getOccupiedSeats = async ()=>{
+    try{
+      const {data} = await axios.get(`/api/booking/seats/${selectedTime.showId}`)
+
+      if(data.success){
+        setOccupiedSeats(data.occupiedSeats)
+      }else{
+        toast.error(data.message)
+      }
+
+    }catch(error){
+      console.log(error)
+
+    }
+  }
+
+  const bookTickets = async ()=>{
+    try{
+      if(!user) return toast.error("Pleased login to proceed")
+
+        if(!selectedTime || !selectedSeats.length) return toast.error("Please select a time and seats")
+
+          const {data} = await axios.post("/api/booking/create", {showId:selectedTime.showId , selectedSeats},{headers:{
+            Authorization :`Bearer ${await getToken()}`
+          }})
+          if(data.success){
+            window.location.href = data.url
+          }
+          else{
+            toast.error(data.message)
+          }
+
+    }catch(error){
+      console.error(error.message)
+    }
+  }
   useEffect(() => {
     getShow();
   }, []);
+
+  useEffect(()=>{
+    if(selectedTime){
+      getOccupiedSeats()
+
+    }
+    
+  
+  },[selectedTime])
   return show ? (
     <div className="flex flex-col md:flex-row px-6 md:px-16 lg:px-40 py-30 md:pt-50">
       <div className="w-60 bg-primary/10 border border-primary/20 rounded-lg py-10 h-max md:sticky md:top-30">
         <p className="text-lg font-semibold px-6">Available Timings</p>
         <div className="mt-5 space-y-1">
-          {show.dateTiime[date].map((item) => (
+          {show.dateTime[date].map((item) => (
             <div
               key={item.time}
               onClick={() => setSelectedTime(item)}
@@ -110,7 +167,7 @@ const SeatLayout = () => {
             ))}
           </div>
         </div>
-        <button onClick={()=> navigate('/my-bookings')} className="flex items-center gap-1 mt-20 px-10 py-3 text-sm bg-primary hover:bg-primary-dull transition rounded-full font-medium cursor-pointer active:scale-95">Proceed to checkout
+        <button onClick={bookTickets} className="flex items-center gap-1 mt-20 px-10 py-3 text-sm bg-primary hover:bg-primary-dull transition rounded-full font-medium cursor-pointer active:scale-95">Proceed to checkout
           <ArrowRightIcon strokeWidth ={3} className="w-4 h-4"/>
         </button>
       </div>

@@ -1,17 +1,21 @@
-import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { assets } from "../assets/assets";
 import { MenuIcon, SearchIcon, TicketPlus, XIcon } from "lucide-react";
 import { useState } from "react";
 import { useClerk, UserButton, useUser } from "@clerk/clerk-react";
+import { useAppContext } from "../context/AppContext";
 
 const Navbar = () => {
   
   const [isOpen,setIsOpen] = useState(false)
   const {user} = useUser()
   const {openSignIn} = useClerk()
-const navigate = useNavigate()
+  const navigate = useNavigate()
+  const {favoriteMovies} = useAppContext();
+  console.log(favoriteMovies)
+
   return (
+    
     <div className="fixed top-0 left-0 z-50 w-full flex items-center justify-between px-6 md:px-16 lg:px-36 py-6">
       <Link to="/" className="max-md:flex-1">
         {" "}
@@ -25,7 +29,7 @@ const navigate = useNavigate()
         <Link onClick={()=>{()=>{scrollTo(0,0);setIsOpen(false)}}} to="/movies">Movies</Link>
         <Link onClick={()=>{()=>{scrollTo(0,0);setIsOpen(false)}}} to='/'>Theaters</Link>
         <Link onClick={()=>{()=>{scrollTo(0,0);setIsOpen(false)}}} to='/'>Releases</Link>
-        <Link onClick={()=>{()=>{scrollTo(0,0);setIsOpen(false)}}} to="favourite">Favourites</Link>
+       {favoriteMovies &&  favoriteMovies.length > 0 &&<Link onClick={()=>{()=>{scrollTo(0,0);setIsOpen(false)}}} to="favourite">Favourites</Link>}
       </div>
       <div className="flex items-center gap-8">
         <SearchIcon className="mx-md:hidden w-6 h-6 cursor-pointer" />
