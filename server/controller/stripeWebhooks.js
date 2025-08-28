@@ -1,5 +1,6 @@
 const stripe = require("stripe")
-const Booking = require("../models/Booking")
+const Booking = require("../models/Booking");
+const { inngest } = require("../inngest");
 
  const stripeWebhooks = async (request , response)=>{
       const stripeInstance = new stripe(process.env.STRIPE_WEBHOOK_SECRET);
@@ -29,6 +30,12 @@ const Booking = require("../models/Booking")
               isPaid:true,
               paymentLink:""
 
+            })
+
+            // Send Confirmation Email
+            await inngest.send({
+              name:"app/show.booked",
+              data:{bookingId}
             })
             break;
 
