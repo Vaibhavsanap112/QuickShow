@@ -15,8 +15,13 @@ const userRouter = require("./routes/userRoutes");
 const { stripeWebhooks } = require("./controller/stripeWebhooks");
 app.use(clerkMiddleware())
 
+const allowedOrigins = [
+  process.env.FRONTEND_URL,   // deployed frontend (from Vercel env vars)
+  "http://localhost:5173"     // local frontend (for dev)
+];
+
 app.use(cors({
-  origin: "http://localhost:5173",  // your frontend URL
+  origin: allowedOrigins,
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
